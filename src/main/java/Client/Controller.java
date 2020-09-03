@@ -1,54 +1,66 @@
-package Client.Service;
+package Client;
 
-import javax.swing.*;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class ClientService extends JFrame {
+
+public class Controller {
 
     private Socket socket;
     private DataInputStream dis;
     private DataOutputStream dos;
     private String myNick;
 
-    public ClientService() {
+    @FXML
+    TextArea mainTextArea;
+
+    @FXML
+    TextField textField;
+
+    public Controller() {
     }
 
-    private void start() {
+    public void start() {
         myNick = "";
 
         try {
             socket = new Socket("localhost", 8189);
             dis = new DataInputStream(socket.getInputStream());
             dos = new DataOutputStream(socket.getOutputStream());
-            setAutorized(false);
+
             Thread t1 = new Thread(() -> {
                 try {
                     while (true) {
                         String strMsg = dis.readUTF();
                         if (strMsg.startsWith("/authOk")) {
-                            setAutorized(true);
                             myNick = strMsg.split("\\s")[1];
+                            mainTextArea.appendText(strMsg + "\n");
                             break;
                         }
-                        //chatArea.appendText(strMsg + "\n");
                     }
                     while (true) {
                         String strMsg = dis.readUTF();
                         if (strMsg.equals("/exit")) {
                             break;
                         }
-                        //chatArea.appendText(strMsg + "\n");
+                        mainTextArea.appendText(strMsg + "\n");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     try {
-                        setAutorized(false);
+                        mainTextArea.appendText("Вы вышли из чата.");
                         socket.close();
                         myNick = "";
+                        System.exit(0);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -61,16 +73,20 @@ public class ClientService extends JFrame {
         }
     }
 
-    public void omAuthClick () {
+    public void sendMsg(ActionEvent actionEvent) {
         if (socket == null || socket.isClosed()) {
             start();
         }
-        //dos.writeUTF("/auth" + loginField.getText() + passField.getText()); or getUnderTextField
-        //or field set is empty
-
+        try {
+            if (textField.getText().trim().isEmpty() || textField.getText().trim().equals("")) {
+                textField.clear();
+                return;
+            }
+            dos.writeUTF(textField.getText());
+            textField.clear();
+            textField.requestFocus();
+        } catch (IOException e) {
+            System.out.println("По техническим причинам сообщение не было отправлено");
+        }
     }
-
-    private void setAutorized(boolean b) {
-    }
-
 }

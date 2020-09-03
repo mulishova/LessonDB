@@ -1,7 +1,12 @@
 package Server.Service;
 
+import Lesson2.DBConn;
+import Lesson2.dao.UsersDAO;
 import Server.Inter.AuthService;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -9,11 +14,19 @@ public class AuthServiceImpl implements AuthService {
 
     private List<UserEntity> usersList;
 
-    public AuthServiceImpl() {
-        this.usersList = new LinkedList<>();
-        this.usersList.add(new UserEntity("login1", "pass1", "nick1"));
-        this.usersList.add(new UserEntity("login2", "pass2", "nick2"));
-        this.usersList.add(new UserEntity("login3", "pass3", "nick3"));
+    public AuthServiceImpl(UsersDAO usersDAO) throws SQLException {
+        usersList = new LinkedList<>();
+
+        PreparedStatement ps = DBConn.getInstance().connection().prepareStatement("SELECT * FROM users");
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            usersList.add(new UserEntity(rs));
+        }
+
+        //this.usersList.add(new UserEntity("login1", "pass1", "nick1"));
+        //this.usersList.add(new UserEntity("login2", "pass2", "nick2"));
+        //this.usersList.add(new UserEntity("login3", "pass3", "nick3"));
     }
 
     @Override
@@ -48,6 +61,14 @@ public class AuthServiceImpl implements AuthService {
             this.login = login;
             this.password = password;
             this.nick = nick;
+        }
+
+        public UserEntity (ResultSet rs) throws SQLException {
+            if (rs != null) {
+                this.login = rs.getString("login");
+                this.password = rs.getString("password");
+                this.nick = rs.getString("nick");
+            }
         }
     }
 }
